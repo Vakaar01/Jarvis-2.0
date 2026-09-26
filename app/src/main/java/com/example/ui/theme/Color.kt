@@ -2,26 +2,20 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Hacker & Cyberpunk Palette
-val CyberBlack = Color(0xFF050807)
-val CyberDarkBg = Color(0xFF0A0F0D)
-val CyberCardBg = Color(0xFF0F1A14)
-val CyberCardBorder = Color(0xFF1B3326)
+// JARVIS Arc Reactor & Holographic HUD Palette
+val CyanPrimary = Color(0xFF00E5FF)
+val CyanGlow = Color(0xFF80F3FF)
+val BlueSecondary = Color(0xFF0091EA)
+val BlueDeep = Color(0xFF0D47A1)
+val AmberAccent = Color(0xFFFFB300)
+val NeonGreen = Color(0xFF00E676)
+val NeonRed = Color(0xFFFF1744)
 
-val CyberGreen = Color(0xFF00FF66)
-val CyberGreenGlow = Color(0x6600FF66)
-val CyberGreenDark = Color(0xFF00B347)
-
-val CyberCyan = Color(0xFF00E5FF)
-val CyberCyanGlow = Color(0x6600E5FF)
-
-val CyberMagenta = Color(0xFFFF007F)
-val CyberMagentaGlow = Color(0x66FF007F)
-
-val CyberYellow = Color(0xFFFFD600)
-val CyberRed = Color(0xFFFF3366)
-
-val TextPrimary = Color(0xFFE8FFF2)
-val TextSecondary = Color(0xFF7FA893)
-val TextMuted = Color(0xFF496B5A)
+val HudBackground = Color(0xFF070B12)
+val HudSurface = Color(0xFF0F172A)
+val HudSurfaceVariant = Color(0xFF1E293B)
+val HudBorder = Color(0xFF1E3A5F)
+val HudTextPrimary = Color(0xFFF8FAFC)
+val HudTextSecondary = Color(0xFF94A3B8)
+val HudTextCyan = Color(0xFF38BDF8)
 

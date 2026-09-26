@@ -22,6 +22,7 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "Vakaar Cyber Downloader"
+rootProject.name = "VAKAAR"
+
 
 include(":app")

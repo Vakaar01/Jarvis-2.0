@@ -1,6 +1,7 @@
 {
-  "name": "Vakaar Cyber Downloader",
-  "description": "Hacker-styled media extractor terminal with multi-platform stream capture, neon progress visualization, and vault manager.",
+  "name": "VAKAAR",
+  "description": "Continuous always-on voice assistant with persistent listening, full device control, scroll/gesture navigation, Hindi & English NLP, and Iron Man JARVIS interface.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
+

@@ -1,10 +1,8 @@
 <resources>
-    <string name="app_name">Vakaar Cyber Downloader</string>
-    <string name="title_logo">VAKAAR</string>
-    <string name="subtitle_terminal">CYBER-STREAM EXTRACTOR v4.0</string>
-    <string name="url_input_hint">ENTER TARGET MEDIA URL [HTTP/HTTPS]...</string>
-    <string name="btn_change_category">CHANGE PLATFORM</string>
-    <string name="btn_initiate_extract">EXTRACT &amp; DOWNLOAD</string>
-    <string name="btn_vault">VAULT</string>
-    <string name="empty_vault">NO MEDIA IN VAULT</string>
+    <string name="app_name">VAKAAR</string>
+    <string name="service_name">VAKAAR Background Service</string>
+    <string name="service_notification_title">VAKAAR AI Active</string>
+    <string name="service_notification_desc">System monitoring &amp; continuous voice standby active</string>
+    <string name="accessibility_service_description">Enables VAKAAR voice navigation, scrolling, media control, and full device gesture commands.</string>
 </resources>
+

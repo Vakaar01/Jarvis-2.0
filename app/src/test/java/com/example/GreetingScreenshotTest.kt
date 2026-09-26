@@ -2,7 +2,6 @@ package com.example
 
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
-import com.example.ui.VakaarHeader
 import com.example.ui.theme.MyApplicationTheme
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -24,11 +23,15 @@ class GreetingScreenshotTest {
   fun greeting_screenshot() {
     composeTestRule.setContent {
       MyApplicationTheme {
-        VakaarHeader(vaultItemCount = 3, onOpenVault = {})
+        com.example.ui.components.ArcReactorView(
+          isListening = false,
+          isSpeaking = false,
+          audioRms = 0f,
+          onClick = {}
+        )
       }
     }
 
     composeTestRule.onRoot().captureRoboImage(filePath = "src/test/screenshots/greeting.png")
   }
 }
-
