@@ -31,8 +31,8 @@ class SpeechManager(
     private val _audioRms = MutableStateFlow(0f)
     val audioRms = _audioRms.asStateFlow()
 
-    // Continuous non-stop listening flag
-    var isContinuousListening: Boolean = true
+    // Continuous non-stop listening flag (disabled to prevent mic lockup and audio clicks)
+    var isContinuousListening: Boolean = false
     var speechPitch: Float = 0.95f
     var speechRate: Float = 1.05f
     var isVoiceEnabled: Boolean = true
@@ -68,21 +68,10 @@ class SpeechManager(
 
                     override fun onDone(utteranceId: String?) {
                         _isSpeaking.value = false
-                        // Once done speaking, immediately resume listening if continuous listening is on!
-                        if (isContinuousListening) {
-                            mainHandler.postDelayed({
-                                startListeningInternal()
-                            }, 400)
-                        }
                     }
 
                     override fun onError(utteranceId: String?) {
                         _isSpeaking.value = false
-                        if (isContinuousListening) {
-                            mainHandler.postDelayed({
-                                startListeningInternal()
-                            }, 500)
-                        }
                     }
                 })
                 isTtsInitialized = true
@@ -123,19 +112,6 @@ class SpeechManager(
                                 onListeningStateChanged(false)
                                 _audioRms.value = 0f
                                 Log.w("SpeechManager", "Speech recognition error: $error")
-
-                                // In continuous mode, automatically auto-restart listening on timeouts/silence
-                                if (isContinuousListening && !_isSpeaking.value) {
-                                    val delayMs = when (error) {
-                                        SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> 1000L
-                                        SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> 350L
-                                        SpeechRecognizer.ERROR_NO_MATCH -> 300L
-                                        else -> 600L
-                                    }
-                                    mainHandler.postDelayed({
-                                        startListeningInternal()
-                                    }, delayMs)
-                                }
                             }
 
                             override fun onResults(results: Bundle?) {

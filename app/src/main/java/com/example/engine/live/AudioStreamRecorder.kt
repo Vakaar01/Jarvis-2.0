@@ -69,17 +69,36 @@ class AudioStreamRecorder(
             val minBufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT)
             val bufferSize = (minBufferSize * 2).coerceAtLeast(CHUNK_SIZE_BYTES * 4)
 
-            // AudioSource.VOICE_COMMUNICATION enables native hardware AEC on Android devices
-            audioRecord = AudioRecord(
-                MediaRecorder.AudioSource.VOICE_COMMUNICATION,
-                SAMPLE_RATE,
-                CHANNEL_CONFIG,
-                AUDIO_FORMAT,
-                bufferSize
-            )
+            // Try AudioSource.VOICE_COMMUNICATION first for hardware AEC, fallback to MIC
+            var record: AudioRecord? = null
+            try {
+                record = AudioRecord(
+                    MediaRecorder.AudioSource.VOICE_COMMUNICATION,
+                    SAMPLE_RATE,
+                    CHANNEL_CONFIG,
+                    AUDIO_FORMAT,
+                    bufferSize
+                )
+            } catch (e: Exception) {
+                Log.w(tag, "VOICE_COMMUNICATION source failed: ${e.message}")
+            }
+
+            if (record == null || record.state != AudioRecord.STATE_INITIALIZED) {
+                Log.w(tag, "Falling back to MediaRecorder.AudioSource.MIC")
+                record?.release()
+                record = AudioRecord(
+                    MediaRecorder.AudioSource.MIC,
+                    SAMPLE_RATE,
+                    CHANNEL_CONFIG,
+                    AUDIO_FORMAT,
+                    bufferSize
+                )
+            }
+
+            audioRecord = record
 
             if (audioRecord?.state != AudioRecord.STATE_INITIALIZED) {
-                Log.e(tag, "AudioRecord failed to initialize")
+                Log.e(tag, "AudioRecord failed to initialize with both sources")
                 audioRecord?.release()
                 audioRecord = null
                 return false

@@ -96,7 +96,7 @@ class LiveSessionManager(
             }
         },
         onDisconnected = {
-            if (_sessionState.value == LiveSessionState.LIVE_ACTIVE || _sessionState.value == LiveSessionState.DISCONNECTING) {
+            if (_sessionState.value != LiveSessionState.IDLE_LISTENING_WAKEWORD) {
                 returnToIdleWakeWord()
             }
         }
@@ -175,7 +175,7 @@ class LiveSessionManager(
         _sessionState.value = LiveSessionState.CONNECTING
         _statusDescription.value = "CONNECTING TO GEMINI LIVE WEBSOCKET..."
 
-        // Stop wake-word recognizer so microphone is available for continuous 16kHz PCM streaming
+        // Stop wake-word detector so microphone is free for continuous 16kHz PCM streaming
         wakeWordDetector.stopListening()
 
         // Reset session timers
@@ -184,8 +184,11 @@ class LiveSessionManager(
         _inactivitySilenceSeconds.value = 0
         lastUserActivityTimestamp = System.currentTimeMillis()
 
-        // Connect bi-directional WebSocket
-        geminiClient.connect()
+        // Connect bi-directional WebSocket after brief audio release pause
+        scope.launch {
+            delay(120)
+            geminiClient.connect()
+        }
     }
 
     private fun onWebSocketConnected() {

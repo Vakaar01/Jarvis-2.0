@@ -29,8 +29,9 @@ class GeminiLiveClient(
     private val tag = "GeminiLiveClient"
 
     companion object {
+        // Official v1beta BidiGenerateContent endpoint for Gemini Multimodal Live API
         const val LIVE_API_BASE_URL =
-            "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent"
+            "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent"
         const val DEFAULT_MODEL = "models/gemini-2.0-flash-exp"
 
         val SYSTEM_INSTRUCTION = """
@@ -52,7 +53,10 @@ class GeminiLiveClient(
         .build()
 
     private var webSocket: WebSocket? = null
-    private var isConnected = false
+    var isConnected = false
+        private set
+    var isSetupComplete = false
+        private set
 
     @Synchronized
     fun connect() {
@@ -72,17 +76,17 @@ class GeminiLiveClient(
             .url(url)
             .build()
 
-        Log.d(tag, "Connecting to Gemini Multimodal Live API WebSocket...")
+        isSetupComplete = false
+        Log.d(tag, "Connecting to Gemini Multimodal Live API WebSocket (v1beta)...")
         webSocket = okHttpClient.newWebSocket(request, createWebSocketListener())
     }
 
     private fun createWebSocketListener(): WebSocketListener {
         return object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
-                Log.d(tag, "Gemini Live WebSocket opened successfully")
+                Log.d(tag, "Gemini Live WebSocket opened successfully. Transmitting initial setup...")
                 isConnected = true
                 sendInitialSetup(webSocket)
-                onConnected()
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
@@ -97,15 +101,24 @@ class GeminiLiveClient(
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
                 Log.d(tag, "WebSocket closed (code=$code, reason=$reason)")
                 isConnected = false
+                isSetupComplete = false
                 this@GeminiLiveClient.webSocket = null
                 onDisconnected()
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                Log.e(tag, "WebSocket failure: ${t.message}", t)
+                val responseBody = try { response?.body?.string() } catch (e: Exception) { null }
+                val code = response?.code
+                val err = when {
+                    responseBody != null -> "Server HTTP $code: $responseBody"
+                    code != null -> "Server HTTP $code error"
+                    else -> t.localizedMessage ?: "WebSocket connection failure"
+                }
+                Log.e(tag, "WebSocket failure: $err", t)
                 isConnected = false
+                isSetupComplete = false
                 this@GeminiLiveClient.webSocket = null
-                onError(t.localizedMessage ?: "WebSocket connection failure")
+                onError(err)
                 onDisconnected()
             }
         }
@@ -145,18 +158,21 @@ class GeminiLiveClient(
                 put("setup", setupObj)
             }
 
-            ws.send(setupJson.toString())
-            Log.d(tag, "Sent initial setup packet with Jarvis system instructions")
+            val payload = setupJson.toString()
+            ws.send(payload)
+            Log.d(tag, "Sent BidiGenerateContentSetup packet to Gemini Live API")
         } catch (e: Exception) {
             Log.e(tag, "Failed to send initial setup: ${e.message}", e)
+            onError("Setup error: ${e.message}")
         }
     }
 
     /**
      * Streams continuous 16kHz PCM audio chunk to Gemini Live API.
+     * Audio chunks are strictly sent only after setupComplete is received.
      */
     fun sendAudioChunk(pcmBytes: ByteArray) {
-        if (!isConnected) return
+        if (!isConnected || !isSetupComplete) return
         val ws = webSocket ?: return
 
         try {
@@ -184,6 +200,24 @@ class GeminiLiveClient(
     private fun handleIncomingMessage(text: String) {
         try {
             val json = JSONObject(text)
+
+            // Check if server reports setup completion
+            if (json.has("setupComplete")) {
+                Log.d(tag, "Gemini Live setupComplete verified! Audio stream unblocked.")
+                isSetupComplete = true
+                onConnected()
+                return
+            }
+
+            // Check if server reports an error
+            val errorObj = json.optJSONObject("error")
+            if (errorObj != null) {
+                val errorMsg = errorObj.optString("message", "Live API error")
+                Log.e(tag, "Server error received: $errorMsg")
+                onError(errorMsg)
+                disconnect()
+                return
+            }
 
             // 1. Check for serverContent
             val serverContent = json.optJSONObject("serverContent")
@@ -247,6 +281,7 @@ class GeminiLiveClient(
     fun disconnect() {
         Log.d(tag, "Disconnecting Gemini Live WebSocket")
         isConnected = false
+        isSetupComplete = false
         try {
             webSocket?.close(1000, "Normal closure")
         } catch (e: Exception) {
