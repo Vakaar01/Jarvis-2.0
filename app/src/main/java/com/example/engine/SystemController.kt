@@ -16,6 +16,8 @@ import android.os.Build
 import android.os.Environment
 import android.os.PowerManager
 import android.os.StatFs
+import android.provider.AlarmClock
+import android.provider.MediaStore
 import android.provider.Settings
 import android.util.Log
 import com.example.data.model.DeviceTelemetry
@@ -180,49 +182,174 @@ class SystemController(private val context: Context) {
         val pm = context.packageManager
         val query = name.lowercase().trim()
 
-        // Known common package identifiers
-        val commonApps = mapOf(
-            "youtube" to "com.google.android.youtube",
-            "whatsapp" to "com.whatsapp",
-            "chrome" to "com.android.chrome",
-            "maps" to "com.google.android.apps.maps",
-            "camera" to "camera",
-            "settings" to "com.android.settings",
-            "calculator" to "calculator",
-            "clock" to "deskclock",
-            "spotify" to "com.spotify.music",
-            "telegram" to "org.telegram.messenger",
-            "gmail" to "com.google.android.gm",
-            "photos" to "com.google.android.apps.photos"
+        // 1. Check for standard Android system intent actions first
+        if (query.contains("camera") || query.contains("photo") || query.contains("tasveer") || query.contains("selfie")) {
+            try {
+                val camIntent = Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                context.startActivity(camIntent)
+                return true
+            } catch (e: Exception) {
+                Log.w("SystemController", "Direct camera intent failed, falling back to package scan", e)
+            }
+        }
+
+        if (query.contains("setting") || query.contains("settings")) {
+            try {
+                val setIntent = Intent(Settings.ACTION_SETTINGS).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                context.startActivity(setIntent)
+                return true
+            } catch (e: Exception) {
+                Log.w("SystemController", "Direct settings intent failed", e)
+            }
+        }
+
+        if (query.contains("dialer") || query.contains("phone") || query.contains("dial") || query.contains("call")) {
+            try {
+                val dialIntent = Intent(Intent.ACTION_DIAL).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                context.startActivity(dialIntent)
+                return true
+            } catch (e: Exception) {
+                Log.w("SystemController", "Direct dialer intent failed", e)
+            }
+        }
+
+        if (query.contains("calculator") || query.contains("calc") || query.contains("hisab")) {
+            try {
+                val calcIntent = Intent(Intent.ACTION_MAIN).apply {
+                    addCategory(Intent.CATEGORY_APP_CALCULATOR)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                context.startActivity(calcIntent)
+                return true
+            } catch (e: Exception) {
+                Log.w("SystemController", "Category calculator failed", e)
+            }
+        }
+
+        if (query.contains("clock") || query.contains("alarm") || query.contains("ghadi") || query.contains("samay")) {
+            try {
+                val clockIntent = Intent(AlarmClock.ACTION_SHOW_ALARMS).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                context.startActivity(clockIntent)
+                return true
+            } catch (e: Exception) {
+                Log.w("SystemController", "AlarmClock intent failed", e)
+            }
+        }
+
+        if (query.contains("gallery") || query.contains("photos")) {
+            try {
+                val galIntent = Intent(Intent.ACTION_MAIN).apply {
+                    addCategory(Intent.CATEGORY_APP_GALLERY)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                context.startActivity(galIntent)
+                return true
+            } catch (e: Exception) {
+                Log.w("SystemController", "Gallery category failed", e)
+            }
+        }
+
+        if (query.contains("map") || query.contains("maps") || query.contains("location") || query.contains("rasta")) {
+            try {
+                val mapIntent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=")).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                context.startActivity(mapIntent)
+                return true
+            } catch (e: Exception) {
+                Log.w("SystemController", "Map intent failed", e)
+            }
+        }
+
+        if (query.contains("youtube") || query.contains("yt")) {
+            return playVideoOrYoutube(null)
+        }
+
+        if (query.contains("play store") || query.contains("playstore")) {
+            try {
+                val playIntent = pm.getLaunchIntentForPackage("com.android.vending") ?: Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store")).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                playIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(playIntent)
+                return true
+            } catch (e: Exception) {
+                Log.w("SystemController", "Play Store launch failed", e)
+            }
+        }
+
+        if (query.contains("chrome") || query.contains("browser") || query.contains("internet")) {
+            try {
+                val chromeIntent = pm.getLaunchIntentForPackage("com.android.chrome") ?: Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com")).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                chromeIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(chromeIntent)
+                return true
+            } catch (e: Exception) {
+                Log.w("SystemController", "Chrome/Browser launch failed", e)
+            }
+        }
+
+        // 2. Known popular package identifiers
+        val knownPackages = mapOf(
+            "whatsapp" to listOf("com.whatsapp", "com.whatsapp.w4b"),
+            "instagram" to listOf("com.instagram.android"),
+            "telegram" to listOf("org.telegram.messenger", "org.telegram.messenger.web"),
+            "spotify" to listOf("com.spotify.music"),
+            "facebook" to listOf("com.facebook.katana", "com.facebook.lite"),
+            "gmail" to listOf("com.google.android.gm"),
+            "snapchat" to listOf("com.snapchat.android"),
+            "twitter" to listOf("com.twitter.android"),
+            "x" to listOf("com.twitter.android"),
+            "truecaller" to listOf("com.truecaller"),
+            "paytm" to listOf("net.one97.paytm"),
+            "phonepe" to listOf("com.phonepe.app")
         )
 
-        for ((key, pkgOrTag) in commonApps) {
+        for ((key, packages) in knownPackages) {
             if (query.contains(key)) {
-                val launchIntent = pm.getLaunchIntentForPackage(pkgOrTag)
-                if (launchIntent != null) {
-                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(launchIntent)
-                    return true
+                for (pkg in packages) {
+                    val intent = pm.getLaunchIntentForPackage(pkg)
+                    if (intent != null) {
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        context.startActivity(intent)
+                        return true
+                    }
                 }
             }
         }
 
-        // Search installed apps by label
+        // 3. Scan all installed launcher apps on the device (requires QUERY_ALL_PACKAGES)
         try {
-            val installedApps = pm.getInstalledApplications(0)
-            for (app in installedApps) {
-                val label = pm.getApplicationLabel(app).toString().lowercase()
-                if (label.contains(query) || query.contains(label)) {
-                    val launchIntent = pm.getLaunchIntentForPackage(app.packageName)
-                    if (launchIntent != null) {
-                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        context.startActivity(launchIntent)
+            val launcherIntent = Intent(Intent.ACTION_MAIN).apply {
+                addCategory(Intent.CATEGORY_LAUNCHER)
+            }
+            val resolveInfoList = pm.queryIntentActivities(launcherIntent, 0)
+            for (info in resolveInfoList) {
+                val label = info.loadLabel(pm).toString().lowercase()
+                val pkgName = info.activityInfo.packageName.lowercase()
+
+                // Check label match or package match
+                if (label.contains(query) || query.contains(label) || pkgName.contains(query)) {
+                    val intent = pm.getLaunchIntentForPackage(info.activityInfo.packageName)
+                    if (intent != null) {
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        context.startActivity(intent)
                         return true
                     }
                 }
             }
         } catch (e: Exception) {
-            Log.e("SystemController", "Error querying installed apps", e)
+            Log.e("SystemController", "Error querying launcher intent activities", e)
         }
 
         return false
@@ -253,32 +380,36 @@ class SystemController(private val context: Context) {
 
     fun playVideoOrYoutube(query: String?): Boolean {
         return try {
-            val intent = if (!query.isNullOrBlank()) {
-                Intent(Intent.ACTION_SEARCH).apply {
+            val pm = context.packageManager
+            if (!query.isNullOrBlank()) {
+                val ytSearchIntent = Intent(Intent.ACTION_SEARCH).apply {
                     setPackage("com.google.android.youtube")
                     putExtra("query", query)
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 }
-            } else {
-                context.packageManager.getLaunchIntentForPackage("com.google.android.youtube")?.apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                try {
+                    context.startActivity(ytSearchIntent)
+                    return true
+                } catch (e: Exception) {
+                    val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/results?search_query=${Uri.encode(query)}")).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                    context.startActivity(browserIntent)
+                    return true
                 }
-            }
-            if (intent != null) {
-                context.startActivity(intent)
-                true
             } else {
-                // Fallback to browser YouTube
-                val ytUrl = if (!query.isNullOrBlank()) {
-                    "https://www.youtube.com/results?search_query=${Uri.encode(query)}"
+                val ytLaunchIntent = pm.getLaunchIntentForPackage("com.google.android.youtube")
+                if (ytLaunchIntent != null) {
+                    ytLaunchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(ytLaunchIntent)
+                    return true
                 } else {
-                    "https://www.youtube.com"
+                    val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com")).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                    context.startActivity(browserIntent)
+                    return true
                 }
-                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(ytUrl)).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                }
-                context.startActivity(browserIntent)
-                true
             }
         } catch (e: Exception) {
             Log.e("SystemController", "Failed to play video/youtube", e)

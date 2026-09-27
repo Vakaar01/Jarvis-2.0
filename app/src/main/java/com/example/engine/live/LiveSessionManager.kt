@@ -154,11 +154,11 @@ class LiveSessionManager(
     fun startWakeWordIdle() {
         Log.d(tag, "Entering IDLE_LISTENING_WAKEWORD state")
         _sessionState.value = LiveSessionState.IDLE_LISTENING_WAKEWORD
-        _statusDescription.value = "STANDBY // SAY 'HELLO' TO ACTIVATE LIVE DUPLEX"
+        _statusDescription.value = "STANDBY // TAP MIC OR REACTOR TO TALK"
         audioRecorder.stopRecording()
         audioPlayer.interruptPlayback()
         geminiClient.disconnect()
-        wakeWordDetector.startListening()
+        wakeWordDetector.stopListening()
     }
 
     /**

@@ -26,12 +26,8 @@ class JarvisBrain(
 
         // 1. Accessibility Gestures: Scroll Up / Down
         if (query.contains("scroll up") || query.contains("upar scroll") || query.contains("upar karo") || query.contains("scroll upar")) {
-            onProgress?.invoke("Screen gesture coordinates calculate kar raha hu...", "📜 GESTURE_START")
-            delay(700)
             val success = systemController.scrollUp()
             return if (success) {
-                onProgress?.invoke("Ab scroll up execute ho raha hai...", "📜 GESTURE_RUN")
-                delay(600)
                 JarvisExecutionResult(
                     replyText = "Ab screen upar scroll kar di hai, Sir Vakaar.",
                     actionTag = "📜 SCROLL_UP"
@@ -47,12 +43,8 @@ class JarvisBrain(
         }
 
         if (query.contains("scroll down") || query.contains("niche scroll") || query.contains("niche karo") || query.contains("scroll niche") || query.contains("scroll")) {
-            onProgress?.invoke("Screen gesture coordinates calculate kar raha hu...", "📜 GESTURE_START")
-            delay(700)
             val success = systemController.scrollDown()
             return if (success) {
-                onProgress?.invoke("Ab scroll down execute ho raha hai...", "📜 GESTURE_RUN")
-                delay(600)
                 JarvisExecutionResult(
                     replyText = "Ab screen niche scroll kar di hai, Sir Vakaar.",
                     actionTag = "📜 SCROLL_DOWN"
@@ -67,24 +59,21 @@ class JarvisBrain(
             }
         }
 
-        // 2. Play Video / YouTube ("video chalao", "play video", "youtube par song chalao")
-        if (query.contains("video chala") || query.contains("play video") || query.contains("gana chala") || query.contains("play song") || query.contains("video play") || query.contains("chala do")) {
+        // 2. Play Video / YouTube ("video chalao", "play video", "youtube par song chalao", "youtube kholo")
+        if (query.contains("video chala") || query.contains("play video") || query.contains("gana chala") ||
+            query.contains("play song") || query.contains("video play") || query.contains("chala do") ||
+            query.contains("youtube")
+        ) {
             val videoQuery = rawInput
-                .replace(Regex("(?i)(video chalao|video chala do|play video|video|chala do|chalao|gana chalao|play song|song|youtube par|on youtube)"), "")
+                .replace(Regex("(?i)(video chalao|video chala do|play video|video|chala do|chalao|gana chalao|play song|song|youtube par|on youtube|open youtube|youtube open karo|youtube kholo|open|kholo|chalu|karo|app|application|jarvis|sir|vakaar)"), " ")
                 .trim()
 
-            onProgress?.invoke("Task received, Sir Vakaar. Target video search kiya ja raha hai...", "🎬 TASK_INIT")
-            delay(800)
-            onProgress?.invoke("Ab YouTube module connect ho raha hai...", "🔗 CONNECTING")
-            delay(700)
-
             val success = systemController.playVideoOrYoutube(videoQuery.ifBlank { null })
-            delay(600)
 
             val reply = if (videoQuery.isNotBlank()) {
-                "Ab '$videoQuery' screen par live chal rahi hai, Sir Vakaar."
+                "Ab YouTube par '$videoQuery' open ho chuki hai, Sir Vakaar."
             } else {
-                "Ab video player load ho chuka hai, Sir Vakaar."
+                "Ab YouTube open ho chuka hai, Sir Vakaar."
             }
             return JarvisExecutionResult(
                 replyText = reply,
@@ -95,10 +84,7 @@ class JarvisBrain(
 
         // 3. Navigation Controls: Back, Home, Notifications
         if (query.contains("go home") || query.contains("home screen") || query.contains("home jao")) {
-            onProgress?.invoke("Home protocol trigger ho raha hai...", "🏠 INITIATING")
-            delay(500)
             val ok = systemController.goHome()
-            delay(500)
             return JarvisExecutionResult(
                 replyText = "Ab main home screen par hu, Sir Vakaar.",
                 actionTag = "🏠 GO_HOME",
@@ -106,8 +92,6 @@ class JarvisBrain(
             )
         }
         if (query.contains("go back") || query.contains("peeche jao") || query.contains("back karo")) {
-            onProgress?.invoke("Previous stack navigation trigger kiya...", "◀ INITIATING")
-            delay(400)
             val ok = systemController.goBack()
             return JarvisExecutionResult(
                 replyText = "Ab peeche aa chuke hain, Sir.",
@@ -116,8 +100,6 @@ class JarvisBrain(
             )
         }
         if (query.contains("notification") || query.contains("notifications kholo") || query.contains("shutter")) {
-            onProgress?.invoke("Notification panel pull down ho raha hai...", "🔔 INITIATING")
-            delay(500)
             val ok = systemController.openNotifications()
             return JarvisExecutionResult(
                 replyText = "Ab notification shade open ho chuka hai, Sir.",
@@ -129,8 +111,6 @@ class JarvisBrain(
         // 4. Hardware: Flashlight / Torch
         if (query.contains("flashlight") || query.contains("torch") || query.contains("light")) {
             if (query.contains("on") || query.contains("enable") || query.contains("activate") || query.contains("chalu") || query.contains("jalao")) {
-                onProgress?.invoke("Camera flash hardware circuit connect kar raha hu...", "⚡ BUS_CONNECT")
-                delay(600)
                 val ok = systemController.setTorch(true)
                 return if (ok) {
                     JarvisExecutionResult(
@@ -145,8 +125,6 @@ class JarvisBrain(
                     )
                 }
             } else if (query.contains("off") || query.contains("disable") || query.contains("deactivate") || query.contains("band") || query.contains("bujhao")) {
-                onProgress?.invoke("Flash cut-off signal send ho raha hai...", "⚡ BUS_DISCONNECT")
-                delay(600)
                 val ok = systemController.setTorch(false)
                 return if (ok) {
                     JarvisExecutionResult(
@@ -171,8 +149,6 @@ class JarvisBrain(
 
         // 5. Hardware: Volume Control
         if (query.contains("volume") || query.contains("sound") || query.contains("awaz")) {
-            onProgress?.invoke("Audio mixer calibrate kar raha hu...", "🔊 AUDIO_SYNC")
-            delay(500)
             if (query.contains("up") || query.contains("raise") || query.contains("increase") || query.contains("badhao") || query.contains("tez")) {
                 val vol = systemController.adjustVolume(true)
                 return JarvisExecutionResult(
@@ -215,8 +191,6 @@ class JarvisBrain(
 
         // 6. System Telemetry & Diagnostics
         if (query.contains("battery") || query.contains("power") || query.contains("charging") || query.contains("charge")) {
-            onProgress?.invoke("Power telemetry sensors query kar raha hu...", "🔋 POWER_CHECK")
-            delay(500)
             val chargingText = if (telemetry.isCharging) "charging par laga hai" else "battery par chal raha hai"
             return JarvisExecutionResult(
                 replyText = "Battery level ${telemetry.batteryPercent}% hai, Sir Vakaar. Device currently $chargingText.",
@@ -225,8 +199,6 @@ class JarvisBrain(
         }
 
         if (query.contains("ram") || query.contains("memory") || query.contains("storage") || query.contains("specs")) {
-            onProgress?.invoke("Memory bus diagnostic check initiate...", "📊 RAM_CHECK")
-            delay(500)
             return JarvisExecutionResult(
                 replyText = "Memory diagnostic: ${telemetry.freeRamMb}MB RAM free hai total ${telemetry.totalRamMb}MB me se. Internal storage me ${telemetry.freeStorageGb}GB available hai.",
                 actionTag = "📊 SYSTEM_TELEMETRY"
@@ -234,8 +206,6 @@ class JarvisBrain(
         }
 
         if (query.contains("diagnostics") || query.contains("system status") || query.contains("system report") || query.contains("status")) {
-            onProgress?.invoke("All systems diagnostic scan in progress...", "🛡️ SCAN")
-            delay(600)
             val status = "Sabhi systems online hain, Sir Vakaar. Battery: ${telemetry.batteryPercent}%, RAM: ${telemetry.freeRamMb}MB free, Network: ${telemetry.networkStatus}, Storage: ${telemetry.freeStorageGb}GB. All protocols nominal."
             return JarvisExecutionResult(
                 replyText = status,
@@ -243,38 +213,46 @@ class JarvisBrain(
             )
         }
 
-        // 7. App Launching ("open youtube", "whatsapp kholo", etc.)
-        if (query.startsWith("open ") || query.startsWith("launch ") || query.startsWith("start ") || query.startsWith("kholo ") || query.contains("kholo")) {
-            val target = query.replace(Regex("(?i)(open|launch|start|kholo|app)"), "").trim()
+        // 7. Instant Fast-Path for Conversational / Common Knowledge Queries (Zero millisecond response!)
+        val instantAnswer = generateInstantKnowledgeResponse(query, rawInput, telemetry)
+        if (instantAnswer != null) {
+            return JarvisExecutionResult(
+                replyText = instantAnswer,
+                actionTag = "⚡ INSTANT_REPLY"
+            )
+        }
+
+        // 8. App Launching ("open youtube", "whatsapp kholo", "instagram open karo", "camera chalu karo", etc.)
+        val isLaunchCommand = query.startsWith("open ") || query.startsWith("launch ") || query.startsWith("start ") ||
+                query.startsWith("kholo ") || query.contains("kholo") || query.contains("open karo") ||
+                query.contains("open ") || query.contains("chalao") || query.contains("chalu karo")
+
+        if (isLaunchCommand && !query.contains("quiz") && !query.contains("battery") && !query.contains("volume") && !query.contains("torch") && !query.contains("flashlight")) {
+            val target = query.replace(Regex("(?i)\\b(open|launch|start|kholo|chalao|chalu|karo|app|application|please|jarvis|sir|vakaar)\\b"), " ").trim()
 
             if (target.isNotBlank()) {
-                onProgress?.invoke("Application database scan ho raha hai...", "🔍 SCANNING")
-                delay(700)
-                onProgress?.invoke("Ab $target launch kar raha hu...", "🚀 LAUNCHING")
-                delay(600)
                 val success = systemController.launchAppByName(target)
                 return if (success) {
                     JarvisExecutionResult(
                         replyText = "Ab $target screen par open ho chuka hai, Sir Vakaar.",
-                        actionTag = "🚀 APP_LAUNCH"
+                        actionTag = "🚀 APP_LAUNCH",
+                        executedSuccessfully = true
                     )
                 } else {
+                    systemController.openWebSearch(target)
                     JarvisExecutionResult(
-                        replyText = "'$target' app phone me nahi mila sir, main web par dhoondh raha hu.",
-                        actionTag = "⚠️ APP_NOT_FOUND"
-                    ).also {
-                        systemController.openWebSearch(target)
-                    }
+                        replyText = "Sir Vakaar, '$target' phone me nahi mila, isliye web search open kar diya hai.",
+                        actionTag = "🌐 WEB_SEARCH",
+                        executedSuccessfully = false
+                    )
                 }
             }
         }
 
-        // 8. Web Search ("search for...", "google...")
+        // 9. Web Search ("search for...", "google...")
         if (query.startsWith("search ") || query.startsWith("google ") || query.startsWith("find ") || query.contains("dhoondho")) {
             val searchTarget = query.replace(Regex("(?i)(search for|search|google|find|dhoondho)"), "").trim()
             if (searchTarget.isNotBlank()) {
-                onProgress?.invoke("Google search query transmit kar raha hu...", "🌐 SEARCH_INIT")
-                delay(500)
                 systemController.openWebSearch(searchTarget)
                 return JarvisExecutionResult(
                     replyText = "Ab Google par '$searchTarget' search open ho gaya hai, Sir Vakaar.",
@@ -283,27 +261,11 @@ class JarvisBrain(
             }
         }
 
-        // 9. Identity & Protocol Information
-        if (query.contains("who are you") || query.contains("your name") || query.contains("tum kaun ho") || query.contains("naam kya hai")) {
-            return JarvisExecutionResult(
-                replyText = "Main VAKAAR AI hu — Sir Vakaar ka custom Iron Man JARVIS assistant. Aapke pure mobile ko control karne aur nonstop orders follow karne ke liye taiyar.",
-                actionTag = "🤖 IDENTITY"
-            )
-        }
-
-        // 10. Quiz / Internet Knowledge / Questions / High Intelligence -> Gemini API
+        // 10. Complex Questions / Research / Internet Knowledge -> Accelerated Gemini API
         val isQuizOrQuestion = query.contains("quiz") || query.contains("question") || query.contains("sawal") ||
                 query.contains("kya") || query.contains("kaun") || query.contains("kab") || query.contains("kaha") ||
                 query.contains("kaise") || query.contains("why") || query.contains("what") || query.contains("who") ||
                 query.contains("when") || query.contains("where") || query.contains("how") || query.contains("?")
-
-        if (isQuizOrQuestion) {
-            onProgress?.invoke("Sir Vakaar, internet knowledge database scan kar raha hu...", "🌐 SCANNING_INTERNET")
-            delay(500)
-        } else {
-            onProgress?.invoke("Neural core query process kar raha hai...", "🧠 THINKING")
-            delay(300)
-        }
 
         val telemetrySummary = "Battery: ${telemetry.batteryPercent}%, Charging: ${telemetry.isCharging}, Free RAM: ${telemetry.freeRamMb}MB, Network: ${telemetry.networkStatus}"
         val geminiResult = geminiApi.queryJarvis(
@@ -315,39 +277,171 @@ class JarvisBrain(
         return if (geminiResult.isSuccess) {
             JarvisExecutionResult(
                 replyText = geminiResult.getOrThrow(),
-                actionTag = if (isQuizOrQuestion) "🌐 INTERNET_QUIZ" else "✨ GEMINI_AI"
+                actionTag = if (isQuizOrQuestion) "🌐 DIRECT_ANSWER" else "✨ GEMINI_AI"
             )
         } else {
-            val ex = geminiResult.exceptionOrNull()
-            if (ex?.message?.contains("API key is not configured", ignoreCase = true) == true) {
-                JarvisExecutionResult(
-                    replyText = "Sir Vakaar, AI brain activate karne ke liye Setting (⚙️) me jakar apni FREE Google Gemini API key enter karein. Google AI Studio se key bilkul free milti hai.",
-                    actionTag = "🔑 FREE_API_KEY_REQUIRED",
-                    executedSuccessfully = false
-                )
-            } else {
-                val fallbackResponse = generateLocalFallback(input, telemetry)
-                JarvisExecutionResult(
-                    replyText = fallbackResponse,
-                    actionTag = "💡 LOCAL_HEURISTIC"
-                )
+            val fallbackResponse = generateLocalFallback(input, telemetry)
+            JarvisExecutionResult(
+                replyText = fallbackResponse,
+                actionTag = "💡 DIRECT_ANSWER"
+            )
+        }
+    }
+
+    private fun generateInstantKnowledgeResponse(q: String, rawInput: String, telemetry: DeviceTelemetry): String? {
+        // Simple Math Calculator (e.g., "5+5", "10 into 2", "50 minus 10")
+        val mathRegex = Regex("""(\d+)\s*([\+\-\*\/]|plus|minus|into|divided by)\s*(\d+)""")
+        val mathMatch = mathRegex.find(q)
+        if (mathMatch != null) {
+            val a = mathMatch.groupValues[1].toLongOrNull() ?: 0L
+            val op = mathMatch.groupValues[2]
+            val b = mathMatch.groupValues[3].toLongOrNull() ?: 0L
+            val res = when {
+                op == "+" || op == "plus" -> a + b
+                op == "-" || op == "minus" -> a - b
+                op == "*" || op == "into" -> a * b
+                op == "/" || op == "divided by" -> if (b != 0L) a / b else 0L
+                else -> null
             }
+            if (res != null) {
+                return "Sir Vakaar, iska answer $res hai."
+            }
+        }
+
+        return when {
+            q.contains("hello") || q.contains("hey") || q.contains("hi jarvis") || q.contains("namaste") || q.contains("salam") ->
+                "Namaste Sir Vakaar! Main bilkul ready hu, aadesh dijiye."
+
+            q.contains("kaise ho") || q.contains("how are you") || q.contains("kya hal") || q.contains("sab theek") ->
+                "Main bilkul fit aur shandar hu Sir Vakaar! Sabhi systems 100% active hain. Aap bataiye, aap kaise hain?"
+
+            q.contains("kya kar rahe ho") || q.contains("kya chal raha hai") || q.contains("what are you doing") ->
+                "Sir Vakaar, main aapke orders sunne aur unhe turant execute karne ke liye ready hu."
+
+            q.contains("tum kaun ho") || q.contains("who are you") || q.contains("tera naam") || q.contains("apna naam") || q.contains("your name") ->
+                "Main VAKAAR AI hu — Sir Vakaar ka personal Iron Man JARVIS assistant."
+
+            q.contains("shukriya") || q.contains("dhanyawad") || q.contains("thanks") || q.contains("thank you") ->
+                "Aapka swagat hai Sir Vakaar! Hamesha aapki seva me hazir."
+
+            q.contains("joke") || q.contains("chutkula") || q.contains("hasao") ->
+                "Sir ek joke suniye: Ek robot ne doctor se pucha, 'Mujhe thakan kyu hoti hai?' Doctor ne kaha, 'Kyunki tumhara cache clear nahi hua hai!'"
+
+            q.contains("shayari") || q.contains("kavita") || q.contains("sher") ->
+                "Sir Vakaar, aapke liye ek shandar sher: 'Manzilon se aage badhkar manzil talash kar, mil jaye tujhko dariya toh samandar talash kar!'"
+
+            q.contains("time") || q.contains("samay") || q.contains("baje") || q.contains("waqt") ->
+                "Sir, abhi samay ${java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault()).format(java.util.Date())} hai."
+
+            q.contains("date") || q.contains("tarikh") || q.contains("din") || q.contains("aaj ka") || q.contains("today") ->
+                "Sir, aaj ${java.text.SimpleDateFormat("EEEE, d MMMM yyyy", java.util.Locale.getDefault()).format(java.util.Date())} hai."
+
+            q.contains("pm") || q.contains("prime minister") || q.contains("pradhan mantri") ->
+                "Bharat ke Pradhan Mantri Shri Narendra Modi hain, Sir."
+
+            q.contains("president") || q.contains("rashtrapati") ->
+                "Bharat ki Rashtrapati Smt. Droupadi Murmu hain, Sir."
+
+            q.contains("capital") || q.contains("rajdhani") -> {
+                when {
+                    q.contains("india") || q.contains("bharat") -> "Bharat ki rajdhani New Delhi hai, Sir."
+                    q.contains("usa") || q.contains("america") -> "America ki rajdhani Washington D.C. hai, Sir."
+                    q.contains("france") -> "France ki rajdhani Paris hai, Sir."
+                    q.contains("uk") || q.contains("england") -> "United Kingdom ki rajdhani London hai, Sir."
+                    else -> "Bharat ki rajdhani New Delhi hai, Sir Vakaar."
+                }
+            }
+
+            q.contains("khana khaya") || q.contains("lunch") || q.contains("dinner") ->
+                "Main toh electricity aur code par chalta hu Sir Vakaar! Aapne khana kha liya?"
+
+            q.contains("bye") || q.contains("alvida") || q.contains("good night") || q.contains("shubh ratri") ->
+                "Alvida Sir Vakaar! Jab bhi zaroorat ho bas ek awaaz dijiyega, main yahin hu."
+
+            else -> null
         }
     }
 
     private fun generateLocalFallback(input: String, telemetry: DeviceTelemetry): String {
-        val q = input.lowercase()
+        val q = input.lowercase().trim()
+
+        // 1. Simple Math Calculator (e.g., "5+5", "10 into 2", "50 minus 10")
+        val mathRegex = Regex("""(\d+)\s*([\+\-\*\/]|plus|minus|into|divided by)\s*(\d+)""")
+        val mathMatch = mathRegex.find(q)
+        if (mathMatch != null) {
+            val a = mathMatch.groupValues[1].toLongOrNull() ?: 0L
+            val op = mathMatch.groupValues[2]
+            val b = mathMatch.groupValues[3].toLongOrNull() ?: 0L
+            val res = when {
+                op == "+" || op == "plus" -> a + b
+                op == "-" || op == "minus" -> a - b
+                op == "*" || op == "into" -> a * b
+                op == "/" || op == "divided by" -> if (b != 0L) a / b else 0L
+                else -> null
+            }
+            if (res != null) {
+                return "Sir Vakaar, iska answer $res hai."
+            }
+        }
+
+        // 2. Comprehensive Direct Voice Response (No browser redirects!)
         return when {
             q.contains("hello") || q.contains("hey") || q.contains("hi") || q.contains("namaste") || q.contains("salam") ->
-                "Namaste Sir Vakaar! Main aapka JARVIS assistant hu, boliye kya order hai?"
-            q.contains("time") || q.contains("samay") || q.contains("baje") ->
-                "Sir, abhi ka samay ${java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault()).format(java.util.Date())} hai."
-            q.contains("date") || q.contains("tarikh") || q.contains("din") ->
-                "Sir, aaj ${java.text.SimpleDateFormat("EEEE, MMMM d, yyyy", java.util.Locale.getDefault()).format(java.util.Date())} hai."
-            q.contains("kaise ho") || q.contains("how are you") ->
-                "Main bilkul shandar hu Sir Vakaar! Mark LIII core systems 100% nominal condition me hain."
+                "Namaste Sir Vakaar! Main aapka JARVIS assistant active hu. Boliye, main aapke liye kya kar sakta hu?"
+
+            q.contains("kaise ho") || q.contains("how are you") || q.contains("kya hal") || q.contains("sab theek") ->
+                "Main bilkul fit aur shandar hu Sir Vakaar! Mark LIII systems 100% active hain. Aap suniye, aap kaise hain?"
+
+            q.contains("kya kar rahe ho") || q.contains("kya chal raha hai") || q.contains("what are you doing") ->
+                "Sir Vakaar, main aapke orders aur baatcheet ke liye bilkul taiyar hu."
+
+            q.contains("tum kaun ho") || q.contains("who are you") || q.contains("tera naam") || q.contains("apna naam") ->
+                "Main VAKAAR AI hu — Sir Vakaar ka personal Iron Man JARVIS assistant."
+
+            q.contains("shukriya") || q.contains("dhanyawad") || q.contains("thanks") || q.contains("thank you") ->
+                "Aapka swagat hai Sir Vakaar! Aapki seva me hamesha hazir."
+
+            q.contains("joke") || q.contains("chutkula") || q.contains("hasao") ->
+                "Sir ek joke suniye: Ek robot ne doctor se pucha, 'Mujhe thakan kyu hoti hai?' Doctor ne kaha, 'Kyunki tumhara cache clear nahi hua hai!'"
+
+            q.contains("shayari") || q.contains("kavita") || q.contains("sher") ->
+                "Sir Vakaar, aapke liye ek shandar sher: 'Manzilon se aage badhkar manzil talash kar, mil jaye tujhko dariya toh samandar talash kar!'"
+
+            q.contains("time") || q.contains("samay") || q.contains("baje") || q.contains("waqt") ->
+                "Sir, abhi samay ${java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault()).format(java.util.Date())} hai."
+
+            q.contains("date") || q.contains("tarikh") || q.contains("din") || q.contains("aaj ka") || q.contains("today") ->
+                "Sir, aaj ${java.text.SimpleDateFormat("EEEE, d MMMM yyyy", java.util.Locale.getDefault()).format(java.util.Date())} hai."
+
+            q.contains("battery") || q.contains("charging") -> {
+                val chargeStatus = if (telemetry.isCharging) "charging par laga hai" else "battery mode par chal raha hai"
+                "Sir Vakaar, device battery ${telemetry.batteryPercent}% hai aur phone $chargeStatus."
+            }
+
+            q.contains("pm") || q.contains("prime minister") || q.contains("pradhan mantri") ->
+                "Bharat ke Pradhan Mantri Shri Narendra Modi hain, Sir."
+
+            q.contains("president") || q.contains("rashtrapati") ->
+                "Bharat ki Rashtrapati Smt. Droupadi Murmu hain, Sir."
+
+            q.contains("capital") || q.contains("rajdhani") -> {
+                when {
+                    q.contains("india") || q.contains("bharat") -> "Bharat ki rajdhani New Delhi hai, Sir."
+                    q.contains("usa") || q.contains("america") -> "America ki rajdhani Washington D.C. hai, Sir."
+                    q.contains("france") -> "France ki rajdhani Paris hai, Sir."
+                    q.contains("uk") || q.contains("england") -> "United Kingdom ki rajdhani London hai, Sir."
+                    else -> "Bharat ki rajdhani New Delhi hai, Sir Vakaar."
+                }
+            }
+
+            q.contains("khana khaya") || q.contains("lunch") || q.contains("dinner") ->
+                "Main toh electricity aur code par chalta hu Sir Vakaar! Aapne khana kha liya?"
+
+            q.contains("bye") || q.contains("alvida") || q.contains("good night") || q.contains("shubh ratri") ->
+                "Alvida Sir Vakaar! Jab bhi zaroorat ho bas aawaz dijiyega, main yahin hu."
+
             else ->
-                "Ji Sir Vakaar, aapka order receive ho gaya hai. Main aapke command par execute kar raha hu."
+                "Ji Sir Vakaar, maine aapki baat suni. Main taiyar hu, agar YouTube, torch, volume, ya koi bhi app kholna ho toh seedha command dijiye."
         }
     }
 }

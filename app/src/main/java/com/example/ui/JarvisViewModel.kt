@@ -176,29 +176,30 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
         )
     }
 
+    fun toggleListening() {
+        if (_isListening.value) {
+            stopListening()
+        } else {
+            startListening()
+        }
+    }
+
+    fun startListening() {
+        speechManager.startListening()
+        _isListening.value = true
+    }
+
+    fun stopListening() {
+        speechManager.stopListening()
+        _isListening.value = false
+    }
+
     fun toggleLiveSession() {
         if (liveState.value == LiveSessionState.LIVE_ACTIVE || liveState.value == LiveSessionState.CONNECTING) {
             liveSessionManager.stopLiveSession("User tapped to stop live session")
         } else {
             speechManager.stopListening()
             liveSessionManager.startLiveSession()
-        }
-    }
-
-    fun startLiveSession() {
-        speechManager.stopListening()
-        liveSessionManager.startLiveSession()
-    }
-
-    fun stopLiveSession() {
-        liveSessionManager.stopLiveSession()
-    }
-
-    fun toggleListening() {
-        if (liveState.value == LiveSessionState.LIVE_ACTIVE || liveState.value == LiveSessionState.CONNECTING) {
-            toggleLiveSession()
-        } else {
-            toggleLiveSession()
         }
     }
 
@@ -233,8 +234,6 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
                             actionTag = actionTag ?: "⚙️ STEP"
                         )
                     )
-                    // Speak progressive running commentary aloud!
-                    speechManager.speak(stepText)
                 }
             )
 

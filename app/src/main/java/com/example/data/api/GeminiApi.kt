@@ -16,21 +16,26 @@ class GeminiApi(
     private val customApiKeyProvider: () -> String?
 ) {
     private val client = OkHttpClient.Builder()
-        .connectTimeout(60, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(60, TimeUnit.SECONDS)
+        .connectTimeout(4, TimeUnit.SECONDS)
+        .readTimeout(7, TimeUnit.SECONDS)
+        .writeTimeout(4, TimeUnit.SECONDS)
         .build()
 
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
 
     fun getEffectiveApiKey(): String {
-        return customApiKeyProvider()?.trim()?.takeIf { it.isNotBlank() }
-            ?: (try { BuildConfig.GEMINI_API_KEY.trim() } catch (e: Exception) { "" })
+        val custom = customApiKeyProvider()?.trim()?.takeIf { it.isNotBlank() }
+        if (!custom.isNullOrBlank()) return custom
+        val buildKey = try { BuildConfig.GEMINI_API_KEY.trim() } catch (e: Exception) { "" }
+        if (buildKey.isBlank() || buildKey == "MY_GEMINI_API_KEY" || buildKey.startsWith("AIzaSyDo-iPfTbwdEJf7L5nc")) {
+            return ""
+        }
+        return buildKey
     }
 
     fun hasConfiguredKey(): Boolean {
         val key = getEffectiveApiKey()
-        return key.isNotBlank() && key != "MY_GEMINI_API_KEY"
+        return key.isNotBlank()
     }
 
     suspend fun testApiKey(candidateKey: String): Result<String> = withContext(Dispatchers.IO) {
@@ -89,14 +94,15 @@ class GeminiApi(
         }
 
         try {
-            val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=$apiKey"
+            val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=$apiKey"
 
             val systemInstruction = """
                 You are VAKAAR AI (Mark LIII), the ultimate high-tech Iron Man JARVIS assistant, running natively on Sir Vakaar's Android mobile device.
                 Your personality & rules:
                 - Loyal, sharp, respectful, witty, and calm under all circumstances.
                 - Address the user as 'Sir Vakaar' or 'Sir' naturally in responses.
-                - PURE VOICE ASSISTANT: Answers are spoken directly to the user's ears. Keep answers concise, natural, and punchy (1-3 sentences). Do not use markdown asterisks (*), markdown tables, or emojis that sound awkward when spoken.
+                - PURE VOICE ASSISTANT: Answers are spoken directly to the user's ears. Deliver complete, crystal-clear, and thorough answers. NEVER leave a sentence or thought half-finished or cut off midway.
+                - Do NOT use markdown asterisks (*), markdown headers, bullet lists, or emojis in your reply, as they sound awkward and glitch the text-to-speech engine. Write clean, natural conversational sentences with standard punctuation.
                 - QUIZ & INTERNET KNOWLEDGE MASTER: If the user asks any quiz question, trivia, riddle, general knowledge, current facts, science, history, cricket/sports, or calculation, use your broad world intelligence to provide the exact, accurate, and direct answer immediately.
                 - You understand both Hindi and English fluently. Respond in the language or mix of languages the user uses (Hindi, Hinglish, or English).
                 - Real-time mobile system telemetry: $telemetrySummary.
@@ -140,7 +146,7 @@ class GeminiApi(
 
                 val genConfig = JSONObject().apply {
                     put("temperature", 0.7)
-                    put("maxOutputTokens", 300)
+                    put("maxOutputTokens", 2048)
                 }
                 put("generationConfig", genConfig)
             }

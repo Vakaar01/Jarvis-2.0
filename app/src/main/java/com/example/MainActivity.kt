@@ -160,6 +160,9 @@ fun JarvisApp(viewModel: JarvisViewModel) {
                 isServiceRunning = isServiceRunning,
                 hasApiKey = hasApiKey,
                 liveState = liveState,
+                isListening = effectiveListening,
+                isSpeaking = effectiveSpeaking,
+                isProcessing = isProcessing,
                 onSettingsClick = { viewModel.openSettings() }
             )
         },
@@ -296,22 +299,24 @@ fun JarvisApp(viewModel: JarvisViewModel) {
                     Text(
                         text = when {
                             currentStep != null -> "● [STEP]: $currentStep"
-                            liveState == LiveSessionState.LIVE_ACTIVE && effectiveSpeaking -> "● GEMINI LIVE VOICE RESPONSE // PLAYING (24kHz)"
-                            liveState == LiveSessionState.LIVE_ACTIVE -> "● FULL DUPLEX LIVE // [$sessionTimerFormatted / 10:00] // AEC & BARGE-IN ACTIVE"
-                            liveState == LiveSessionState.CONNECTING -> "● CONNECTING TO GEMINI MULTIMODAL LIVE WEBSOCKET..."
-                            liveState == LiveSessionState.DISCONNECTING -> "● CLOSING LIVE STREAM // ENTERING WAKE-WORD STANDBY"
-                            effectiveListening -> "● NON-STOP MIC ACTIVE // LISTENING..."
-                            else -> "● WAKE-WORD IDLE // SAY 'HELLO' (OR TAP REACTOR TO START LIVE)"
+                            isSpeaking -> "● JARVIS BOL RAHA HAI // SPEAKING (TTS)"
+                            isProcessing -> "● SOCH RAHA HU // THINKING..."
+                            isListening -> "● SIR VAKAAR MAIN SUN RAHA HU // LISTENING..."
+                            liveState == LiveSessionState.LIVE_ACTIVE && effectiveSpeaking -> "● GEMINI LIVE VOICE RESPONSE // PLAYING"
+                            liveState == LiveSessionState.LIVE_ACTIVE -> "● FULL DUPLEX LIVE // [$sessionTimerFormatted / 10:00]"
+                            liveState == LiveSessionState.CONNECTING -> "● CONNECTING TO GEMINI WEBSOCKET..."
+                            else -> "● TAP ARC REACTOR YA MIC BUTTON TO TALK"
                         },
                         fontFamily = FontFamily.Monospace,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = when {
                             currentStep != null -> NeonGreen
-                            liveState == LiveSessionState.LIVE_ACTIVE && effectiveSpeaking -> CyanGlow
+                            isSpeaking -> CyanGlow
+                            isProcessing -> AmberAccent
+                            isListening -> NeonGreen
                             liveState == LiveSessionState.LIVE_ACTIVE -> NeonGreen
                             liveState == LiveSessionState.CONNECTING -> AmberAccent
-                            effectiveListening -> AmberAccent
                             else -> CyanPrimary.copy(alpha = 0.8f)
                         },
                         letterSpacing = 1.sp
@@ -374,6 +379,9 @@ fun JarvisTopBar(
     isServiceRunning: Boolean,
     hasApiKey: Boolean,
     liveState: LiveSessionState,
+    isListening: Boolean = false,
+    isSpeaking: Boolean = false,
+    isProcessing: Boolean = false,
     onSettingsClick: () -> Unit
 ) {
     Surface(
@@ -412,14 +420,16 @@ fun JarvisTopBar(
                         letterSpacing = 2.sp
                     )
                     Text(
-                        text = when (liveState) {
-                            LiveSessionState.LIVE_ACTIVE -> "GEMINI MULTIMODAL LIVE // DUPLEX ACTIVE"
-                            LiveSessionState.CONNECTING -> "GEMINI LIVE // CONNECTING..."
-                            else -> "MARK LIII // WAKE-WORD ('HELLO') STANDBY"
+                        text = when {
+                            isSpeaking -> "JARVIS // SPEAKING TO SIR VAKAAR"
+                            isListening -> "VOICE RECOGNITION // LISTENING..."
+                            isProcessing -> "JARVIS // THINKING..."
+                            liveState == LiveSessionState.LIVE_ACTIVE -> "GEMINI MULTIMODAL LIVE // DUPLEX ACTIVE"
+                            else -> "MARK LIII // VOICE ASSISTANT READY"
                         },
                         fontFamily = FontFamily.Monospace,
                         fontSize = 9.sp,
-                        color = if (liveState == LiveSessionState.LIVE_ACTIVE) NeonGreen else Color(0xFF94A3B8)
+                        color = if (isListening || isSpeaking || liveState == LiveSessionState.LIVE_ACTIVE) NeonGreen else Color(0xFF94A3B8)
                     )
                 }
             }
@@ -684,13 +694,12 @@ fun JarvisVoiceCommandDock(
                     Text(
                         text = when {
                             currentStep != null -> "● [PROGRESS]: $currentStep"
-                            isSpeaking -> "● TRANSMITTING AUDIO REPLY (GEMINI LIVE)..."
-                            isProcessing -> "● NEURAL REASONING..."
-                            liveState == LiveSessionState.LIVE_ACTIVE -> "● LIVE DUPLEX ACTIVE // CONTINUOUS 16kHz PCM // BOLTE RAHIYE"
-                            liveState == LiveSessionState.CONNECTING -> "● ESTABLISHING BI-DIRECTIONAL GEMINI WEBSOCKET..."
-                            liveState == LiveSessionState.DISCONNECTING -> "● CLOSING STREAM // ENTERING WAKE-WORD STANDBY"
-                            isListening -> "● DIRECT VOICE ACTIVE // BOLTE RAHIYE SIR VAKAAR"
-                            else -> "● WAKE-WORD STANDBY // SAY 'HELLO' (OR TAP CORE TO START)"
+                            isSpeaking -> "● JARVIS BOL RAHA HAI // SIR VAKAAR SUN RAHE HAIN"
+                            isProcessing -> "● SOCH RAHA HU..."
+                            isListening -> "● SIR VAKAAR MAIN SUN RAHA HU // BOLIYE..."
+                            liveState == LiveSessionState.LIVE_ACTIVE -> "● LIVE DUPLEX ACTIVE // BOLTE RAHIYE"
+                            liveState == LiveSessionState.CONNECTING -> "● ESTABLISHING GEMINI WEBSOCKET..."
+                            else -> "● TAP ARC REACTOR YA MIC BUTTON TO TALK"
                         },
                         fontFamily = FontFamily.Monospace,
                         fontSize = 11.sp,
